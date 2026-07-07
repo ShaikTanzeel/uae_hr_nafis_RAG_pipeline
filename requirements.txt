@@ -1,0 +1,12 @@
+# Minimal, high-performance packages for Cloud-RAG & Agentic workflows
+streamlit>=1.30.0
+google-genai>=0.1.0        # Still required: Gemini Embedding API used in database.py
+qdrant-client>=1.7.0
+python-dotenv>=1.0.0
+pypdf>=4.0.0
+groq>=0.9.0                # NEW: Groq SDK for LLM generation (replaces Gemini in agent.py)
+langchain>=0.1.0
+langchain-groq>=0.1.0
+langchain-core>=0.1.0
+rapidfuzz>=3.0.0
+diskcache>=5.6.0

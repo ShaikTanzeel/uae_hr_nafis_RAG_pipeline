@@ -1,0 +1,39 @@
+# Secrets
+.env*
+
+# Environments
+venv/
+env/
+.venv/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local Database
+qdrant_db/
+
+# Evaluation Data
+Evaluation/
+
+# Temporary / Scratch Files
+scratch/
+*.log
+cache_dir/
+logs/
+terminal_output
+
+# IDE / System files
+.vscode/
+.idea/
+.DS_Store
+
+# Personal / Documentation Files
+learning_journal.md
+project_context.md
+project_architecture_guide.md
+test_report.md
+agent_learning_notebook.md
+

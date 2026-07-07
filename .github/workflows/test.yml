@@ -1,0 +1,50 @@
+name: UAE HR RAG Copilot Test Suite
+
+# Trigger this workflow on git pushes and pull requests to the main branch
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  run-tests:
+    # We use a clean Linux cloud environment hosted by GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Copy our project code onto the cloud runner
+    - name: Checkout Code Repository
+      uses: actions/checkout@v4
+
+    # Step 2: Install Python 3.11 on the runner
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip' # Speeds up subsequent runs by caching download packages
+
+    # Step 3: Install all project dependencies
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # Step 4: Prepare the database by running ingestion
+    # This reads the PDF files in ./data, chunks them, embeds them,
+    # and populates Qdrant Local. Because of our caching update,
+    # the second time this runs in the cloud it will be extremely fast!
+    - name: Ingest Laws and Initialize Qdrant
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: python src/database.py
+
+    # Step 5: Execute the RAG validation suite
+    # This runs the 19 automated verification tests (probation calculation,
+    # gratuity math, sham fine matching, and forbidden term checks).
+    # If any test fails, the python script exits with code 1, which blocks the build.
+    - name: Run Verification Test Suite
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: python tests/test_suite.py
