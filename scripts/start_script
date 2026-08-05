@@ -1,0 +1,23 @@
+=====================================================
+TERMINAL 1: BACKEND SERVER
+=====================================================
+# Run this in your FIRST terminal window (from project root):
+
+python scripts/run_backend.py
+
+
+=====================================================
+TERMINAL 2: FRONTEND UI
+=====================================================
+# Run this in a SECOND terminal window (from project root):
+
+cd frontend
+node node_modules\next\dist\bin\next dev
+
+
+=====================================================
+STEP 3: OPEN IN BROWSER
+=====================================================
+App UI          : http://localhost:3000
+Demo Questions  : http://localhost:3000/questionnaire.html
+Backend API Docs: http://localhost:8000/docs

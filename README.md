@@ -1,10 +1,10 @@
 # 🇦🇪 UAE HR & Nafis Copilot (Agentic RAG)
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Framework](https://img.shields.io/badge/framework-LangGraph%20%7C%20LangChain-orange.svg)](https://langchain.com/)
+[![Node 18+](https://img.shields.io/badge/node-18+-green.svg)](https://nodejs.org/)
+[![Framework](https://img.shields.io/badge/framework-LangGraph%20%7C%20FastAPI-orange.svg)](https://fastapi.tiangolo.com/)
 [![Vector DB](https://img.shields.io/badge/Vector%20DB-Qdrant-red.svg)](https://qdrant.tech/)
-[![Frontend](https://img.shields.io/badge/frontend-Streamlit-green.svg)](https://streamlit.io/)
-[![CI/CD](https://img.shields.io/badge/build-GitHub%20Actions-brightgreen.svg)](https://github.com/features/actions)
+[![Frontend](https://img.shields.io/badge/frontend-Next.js-black.svg)](https://nextjs.org/)
 
 A production-grade, compliance-focused **Agentic RAG (Retrieval-Augmented Generation)** application designed to act as an HR Copilot for companies operating in the United Arab Emirates. 
 
@@ -14,11 +14,13 @@ This copilot answers complex legal and regulatory queries based on the **UAE Fed
 
 ## 🏗️ System Architecture
 
-This system uses a modular, multi-agent reasoning flow built on **LangChain/LangGraph** with a local **Qdrant** database, persistent caching, and a validation guardrail layer.
+This system uses a modular, multi-agent reasoning flow built on **LangChain/LangGraph** with a local **Qdrant** database, persistent caching, and a validation guardrail layer. It is served by a **FastAPI backend** and a modern **Next.js frontend**.
 
 ```mermaid
 graph TD
-    User([User Query]) --> QR[Query Rewriter]
+    User([User Query]) --> UI[Next.js Frontend]
+    UI -->|API Request| API[FastAPI Backend]
+    API --> QR[Query Rewriter]
     History[(Conversation History)] --> QR
     QR -->|Contextual Search Query| DB[(Qdrant Vector DB)]
     
@@ -32,7 +34,8 @@ graph TD
     MT -->|Computed Penalty| AG
     
     AG -->|Raw Response| GR[Guardrail & Citation Verification]
-    GR -->|Pass/Fail/Warning| UI[Streamlit Frontend]
+    GR -->|Pass/Fail/Warning| API
+    API -->|JSON Response| UI
 ```
 
 ---
@@ -64,6 +67,7 @@ To prevent service interruption during data ingestions:
 A dual-layer guardrail protects the system:
 - **Input Guard:** Sanitizes and blocks prompt injection payloads.
 - **Output Guard:** Compares LLM citations against the actual retrieved database context to flag hallucinated article numbers before rendering the response to the user.
+- **Anti-Sycophancy Guardrail:** Actively corrects false assumptions in leading user questions to prevent the LLM from hallucinating fake validation.
 
 ### 6. Embedding Caching & Structured Observability
 - **Disk Caching:** Caches Google Gemini embedding API requests locally, preventing redundant API cost and network overhead on identical chunks.
@@ -73,21 +77,22 @@ A dual-layer guardrail protects the system:
 
 ## 📂 Codebase Organization
 
-```
+```text
 UAE HR & Nafis Copilot/
-├── .github/workflows/       
-│   └── test.yml                 # Automated CI/CD execution workflow
 ├── data/                        # Source PDF legislative files
 ├── docs/                        # Project roadmap, audits, and trackers
+├── frontend/                    # Next.js React Frontend Application
+│   ├── app/                     # Next.js App Router (Pages, Layouts)
+│   ├── components/              # UI Components (Chat Interface, Sidebar)
+│   └── lib/                     # Frontend utilities and API clients
 ├── scripts/                     # Developer and deployment utilities
-│   ├── find_article_headers.py  # Map PDF index layout
-│   ├── inspect_pdfs.py          # Character extraction inspector
-│   ├── list_models.py           # Model endpoint enumerator
-│   └── upload_dataset.py        # LangSmith gold standard sync
-├── src/                         # Core production codebase
-│   ├── app.py                   # Streamlit Frontend UI
+│   ├── eval/                    # Evaluation and LangSmith sync scripts
+│   ├── utils/                   # Data inspection utilities
+│   └── run_backend.py           # Launch script for the FastAPI server
+├── src/                         # Core FastAPI Backend & RAG System
+│   ├── api.py                   # FastAPI routes and server logic
 │   ├── agent.py                 # Multi-turn LangGraph agent
-│   ├── caching.py               # Diskcache layer
+│   ├── caching.py               # Diskcache layer for embeddings
 │   ├── database.py              # Qdrant client & alias manager
 │   ├── guardrails.py            # Injection detection & citation grounding
 │   ├── ingestion.py             # Hierarchical clause splitter
@@ -95,11 +100,11 @@ UAE HR & Nafis Copilot/
 │   ├── schemas.py               # Pydantic data contracts
 │   └── tools.py                 # AST calculation tool
 ├── tests/                       # Automated test suites
-│   ├── test_suite.py            # 19-loop integration and boundary suite
+│   ├── test_suite.py            # Integration and boundary suite
 │   ├── eval_retrieval.py        # Standalone recall/MRR calculator
 │   └── evaluations.py           # LangSmith evaluators
-├── .gitignore                   
-└── requirements.txt             
+├── requirements.txt             # Python backend dependencies
+└── package.json                 # Frontend Node dependencies (inside /frontend)
 ```
 
 ---
@@ -107,8 +112,9 @@ UAE HR & Nafis Copilot/
 ## 🚀 Setup and Installation
 
 ### 1. Prerequisites
-- Python 3.10 or 3.11
-- API Keys: **Google Gemini API Key** (Embeddings), **Groq API Key** or **OpenAI API Key** (Reasoning Engine)
+- Python 3.10+
+- Node.js 18+
+- API Keys: **Google Gemini API Key** (Embeddings), **OpenAI API Key** or **Groq API Key** (Reasoning Engine)
 
 ### 2. Installation
 Clone the repository:
@@ -117,6 +123,7 @@ git clone https://github.com/ShaikTanzeel/uae_hr_nafis_RAG_pipeline.git
 cd uae_hr_nafis_RAG_pipeline
 ```
 
+#### Backend Setup
 Create and activate a virtual environment:
 ```bash
 python -m venv venv
@@ -126,9 +133,16 @@ python -m venv venv
 source venv/bin/activate
 ```
 
-Install dependencies:
+Install backend dependencies:
 ```bash
 pip install -r requirements.txt
+```
+
+#### Frontend Setup
+```bash
+cd frontend
+npm install
+cd ..
 ```
 
 ### 3. Environment Variables
@@ -138,15 +152,19 @@ Create a `.env` file in the root directory:
 QDRANT_HOST=localhost
 QDRANT_PORT=6333
 
-# LLM Providers (Specify keys for models you wish to use)
+# LLM Providers
 GEMINI_API_KEY=your_gemini_api_key
-GROQ_API_KEY=your_groq_api_key
 OPENAI_API_KEY=your_openai_api_key
 
 # Observability (Optional)
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_API_KEY=your_langsmith_api_key
 LANGCHAIN_PROJECT=uae-hr-copilot
+```
+
+Create a `.env.local` inside the `frontend` directory:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 ---
@@ -158,14 +176,20 @@ Ensure the legislative PDF documents are placed in `./data`. Ingest the document
 ```bash
 python -m src.database
 ```
-*Note: This parses, chunks, caches embeddings, builds versioned collections, and activates the alias.*
 
-### 2. Start the Streamlit Application
-Launch the web interface:
+### 2. Start the Backend Server
+Launch the FastAPI server (runs on `http://localhost:8000`):
 ```bash
-streamlit run src/app.py
+python scripts/run_backend.py
 ```
-*The app will automatically spin up on `http://localhost:8501`.*
+
+### 3. Start the Next.js Frontend
+In a separate terminal window, launch the web application:
+```bash
+cd frontend
+npm run dev
+```
+*The app will be available at `http://localhost:3000`.*
 
 ---
 
@@ -174,7 +198,7 @@ streamlit run src/app.py
 The codebase comes equipped with comprehensive local verification testing and LangSmith integration.
 
 ### Local Integration Test Suite
-To evaluate the agent against **19 complex boundary scenarios** (such as sick leave tier splits, probation notices, and circumvention penalties):
+To evaluate the agent against complex boundary scenarios:
 ```bash
 python tests/test_suite.py
 ```

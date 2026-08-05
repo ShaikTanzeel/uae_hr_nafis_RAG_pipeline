@@ -10,3 +10,7 @@ langchain-groq>=0.1.0
 langchain-core>=0.1.0
 rapidfuzz>=3.0.0
 diskcache>=5.6.0
+# NEW: FastAPI backend bridge for Next.js frontend (src/api.py)
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+

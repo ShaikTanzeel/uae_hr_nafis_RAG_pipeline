@@ -81,7 +81,7 @@ def predict(inputs: dict) -> dict:
 
 # --- CUSTOM DETERMINISTIC EVALUATORS (TOKEN-FREE) ---
 
-from src.test_suite import (
+from tests.test_suite import (
     normalize_text,
     extract_non_citation_text,
     check_negation
@@ -278,7 +278,7 @@ def accuracy_evaluator(run: Run, example: Example) -> dict:
 # ==============================================================================
 
 # TOGGLE FLAG: Set to True to use OpenAI (gpt-4o-mini). Set to False to revert to Gemini.
-USE_OPENAI = True
+USE_OPENAI = False
 
 # Initialize Gemini Client using your free-tier key
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
