@@ -12,6 +12,28 @@ This copilot answers complex legal and regulatory queries based on the **UAE Fed
 
 ---
 
+## 📸 Project Gallery
+
+<p align="center">
+  <img src="assets/screenshot-1.png" alt="Chat Interface" width="800">
+  <br>
+  <em>Modern Next.js Chat Interface with Multi-Turn Memory & Document Preview.</em>
+</p>
+
+<p align="center">
+  <img src="assets/screenshot-2.png" alt="AST Calculator" width="800">
+  <br>
+  <em>Dynamic math execution using the built-in AST Calculator tool for exact legal calculations.</em>
+</p>
+
+<p align="center">
+  <img src="assets/screenshot-3.png" alt="Guardrails" width="800">
+  <br>
+  <em>Anti-Hallucination & Security Guardrails actively blocking prompt injections and unverified claims.</em>
+</p>
+
+---
+
 ## 🏗️ System Architecture
 
 This system uses a modular, multi-agent reasoning flow built on **LangChain/LangGraph** with a local **Qdrant** database, persistent caching, and a validation guardrail layer. It is served by a **FastAPI backend** and a modern **Next.js frontend**.
