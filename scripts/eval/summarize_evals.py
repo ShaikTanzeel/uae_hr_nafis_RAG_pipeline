@@ -1,8 +1,11 @@
 import json
+import os
 
 def summarize():
     try:
-        with open("scratch/langsmith_results.json", "r", encoding="utf-8") as f:
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        results_path = os.path.join(project_root, "Evaluation", "langsmith_results.json")
+        with open(results_path, "r", encoding="utf-8") as f:
             data = json.load(f)
             
         print(f"Total runs analyzed: {len(data)}")

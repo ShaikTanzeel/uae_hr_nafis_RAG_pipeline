@@ -22,10 +22,11 @@ def scan_pdf_for_articles(pdf_path: str) -> list:
     return matches
 
 def main():
-    data_dir = "./data"
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    data_dir = os.path.join(project_root, "data")
     pdf_files = [f for f in os.listdir(data_dir) if f.endswith(".pdf")]
-    
-    output_log_path = "./src/all_article_lines.txt"
+
+    output_log_path = os.path.join(project_root, "src", "all_article_lines.txt")
     print(f"Scanning PDFs for references to 'Article'. Writing to: {output_log_path}")
     
     with open(output_log_path, "w", encoding="utf-8") as out_file:

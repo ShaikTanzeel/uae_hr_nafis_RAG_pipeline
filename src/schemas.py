@@ -38,18 +38,56 @@ class Citation(BaseModel):
     )
 
 
+class CitationExtraction(BaseModel):
+    """
+    PHASE 2 — TASK C2: the small schema used by the post-stream structured-output
+    extraction call (see stream_agent_turn's citation_check step in src/agent.py).
+
+    This is deliberately NOT the same shape as AgentResponse. The streamed answer
+    text already exists by the time this runs, so there's no 'answer' field here —
+    and confidence is always calculated by the server from verify_citations(), so
+    it's not here either. This schema's only job is: given a finished answer and
+    the retrieved context, tell us exactly which citations and articles were used.
+
+    Example:
+        CitationExtraction(
+            citations=[Citation(article_number="Article 9", source_document="Federal Decree by Law No. (33) of 2021")],
+            articles_used=["Article 9"],
+            cannot_verify=False
+        )
+    """
+    citations: list[Citation] = Field(
+        default_factory=list,
+        description="Structured list of all legal citations made in the answer text."
+    )
+    articles_used: list[str] = Field(
+        default_factory=list,
+        description="Flat list of article numbers actually cited in the answer, e.g. ['Article 9', 'Article 30']."
+    )
+    cannot_verify: bool = Field(
+        default=False,
+        description="True if the answer text says the rule could not be verified in the retrieved articles."
+    )
+
+
 class AgentResponse(BaseModel):
     """
-    The complete structured output from a single agent turn.
+    The complete structured result of a single agent turn, assembled AFTER the
+    fact from three separate sources (PHASE 2 — TASK C6, replacing the old
+    single hidden-JSON-block design):
 
-    This is the 'form' the agent fills in at the end of every response.
-    It sits ALONGSIDE the human-readable text answer — not replacing it.
+      - answer: the full text streamed to the user (Section A).
+      - citations / articles_used: pulled from the finished answer by the
+        CitationExtraction structured-output call (Section C2/C3), not written
+        by the model itself as a trailing JSON block anymore.
+      - confidence: calculated entirely server-side from verify_citations()
+        (Section C5) — never a number the model reports about itself.
 
     Fields:
         answer        — The full text answer shown to the user.
         citations     — List of legal citations used (structured, not just text).
         articles_used — Flat list of article numbers for quick lookup.
-        confidence    — How confident the agent is (0.0 = guessing, 1.0 = certain).
+        confidence    — Server-calculated confidence (0.0 = unverified, 1.0 = fully grounded).
         cannot_verify — True if the agent couldn't find the rule in retrieved articles.
     """
     answer: str = Field(

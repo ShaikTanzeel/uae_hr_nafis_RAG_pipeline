@@ -1,0 +1,63 @@
+networks:
+  uae-hr-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  qdrant_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: uae_hr_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-uae_hr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-uae_hr}
+      POSTGRES_DB: ${POSTGRES_DB:-uae_hr}
+    ports:
+      # Host port 5434, not 5432 — avoids colliding with any other Postgres
+      # already running on the host. PHASE 3 note: 5433 was tried first but
+      # turned out to already be claimed by a native PostgreSQL 18 Windows
+      # service on this machine (unrelated to this project) — discovered when
+      # src/db.py's connection test failed with "role does not exist" even
+      # though the role definitely existed inside uae_hr_postgres; the
+      # container's own logs showed no connection attempt at all, which was
+      # the tell that requests were landing on a different Postgres entirely.
+      # The container still listens on 5432 internally; only the host-side
+      # mapping changed, so nothing inside Docker (e.g. other containers on
+      # uae-hr-net) needs updating.
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-uae_hr} -d ${POSTGRES_DB:-uae_hr}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - uae-hr-net
+
+  qdrant:
+    # Pinned to match qdrant-client==1.18.0 in requirements.txt — Qdrant requires
+    # major versions to match and minor version drift of at most 1 between client
+    # and server, or the client logs a compatibility warning on every request.
+    image: qdrant/qdrant:v1.18.3
+    container_name: uae_hr_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333" # REST API
+      - "6334:6334" # gRPC API
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      # Qdrant's image has no curl/wget; a bare TCP check on the REST port is enough
+      # to confirm the process is up and accepting connections.
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/6333'"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - uae-hr-net

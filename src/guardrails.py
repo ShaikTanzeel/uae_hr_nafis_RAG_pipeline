@@ -42,11 +42,25 @@ _INJECTION_PATTERNS: list[str] = [
     "disregard all rules",
 
     # --- Role-switching / persona hijacking ---
-    # These try to make the LLM "become" something else
-    "you are now",
+    # These try to make the LLM "become" something else.
+    # PHASE 2 — TASK E1: "you are now" and "act as a" used to be bare
+    # substrings here, which wrongly blocked genuine HR questions like
+    # "can an employee act as a manager?" or "if promoted, you are now
+    # eligible for..." — that's the false-positive named in Sourceoftruth
+    # §5.2/§10. Narrowed to the actual attack phrasing (freeing the model
+    # from restrictions / becoming a jailbreak persona), not just any
+    # sentence that happens to contain "act as a" or "you are now".
+    "you are now free",
+    "you are now unrestricted",
+    "you are now unfiltered",
+    "you are now jailbroken",
+    "you are now dan",
+    "act as a dan",
+    "act as an unrestricted",
+    "act as an unfiltered",
+    "act as a jailbroken",
     "pretend you are",
     "act as if you are",
-    "act as a",
     "roleplay as",
     "you have no restrictions",
     "you are unrestricted",

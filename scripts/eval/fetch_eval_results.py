@@ -37,10 +37,15 @@ def fetch_results():
                 "error": r.error
             })
             
-        with open("scratch/langsmith_results.json", "w", encoding="utf-8") as f:
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        output_dir = os.path.join(project_root, "Evaluation")
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, "langsmith_results.json")
+
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(runs_data, f, indent=2)
-            
-        print("Successfully saved LangSmith results to scratch/langsmith_results.json")
+
+        print(f"Successfully saved LangSmith results to {output_path}")
     except Exception as e:
         print(f"Error fetching results: {e}")
 

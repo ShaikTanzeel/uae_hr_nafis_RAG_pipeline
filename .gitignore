@@ -1,5 +1,6 @@
 # Secrets
 .env*
+!.env.example
 
 # Environments
 venv/
@@ -36,4 +37,17 @@ project_context.md
 project_architecture_guide.md
 test_report.md
 agent_learning_notebook.md
+legal_model_research.md
+Sourceoftruth.md
+docs/phase-0-tasks.md
+docs/phase-1-tasks.md
+docs/phase-2-tasks.md
+docs/phase-3-tasks.md
+
+# Personal working rules / agent scaffolding (learning-by-doing setup, not project code)
+.agents/
+
+# Debug/scratch dumps from data-inspection scripts
+src/all_article_lines.txt
+src/inspected_structure.txt
 

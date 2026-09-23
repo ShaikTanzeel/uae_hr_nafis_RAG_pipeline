@@ -1,15 +1,18 @@
 """
-fill_qdrant.py — Populate local Qdrant Vector Database with UAE Labour Laws
+fill_qdrant.py — Populate the Qdrant Vector Database with UAE Labour Laws
 
 WHAT THIS SCRIPT DOES:
 1. Reads all PDF legal documents from the data/ folder.
 2. Performs hierarchical chunking (splits large laws into articles & sub-clauses).
 3. Generates 3,072-dimensional Gemini embeddings (with local disk caching).
-4. Populates the local Qdrant vector database (./qdrant_db).
+4. Populates the Qdrant vector database at settings.QDRANT_URL (Dockerized
+   Qdrant server as of Phase 1 task B2 — no longer the local-disk ./qdrant_db folder).
 5. Updates the database alias so the app can query the fresh legal articles.
 
 USAGE:
-    python scripts/fill_qdrant.py
+    python scripts/data/fill_qdrant.py
+
+    Requires the Qdrant container to be up first: `docker compose up -d`
 """
 
 import os

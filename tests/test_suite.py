@@ -9,7 +9,12 @@ from rapidfuzz import fuzz
 # Add the project root directory to Python's path so we can import src modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.agent import run_agent_turn
+# PHASE 2 — SECTION F: run_agent_turn() was retired in A1 (replaced by the
+# streaming stream_agent_turn()). run_agent_turn_blocking() is a small
+# adapter in src/agent.py that drives the streamed version to completion and
+# hands back the same {"answer", "history", ...} shape this file was built
+# against — see src/agent.py's Section F comment block for why.
+from src.agent import run_agent_turn_blocking as run_agent_turn
 from src.tools import safe_math_eval  # Used for dynamic math verification
 
 # ==============================================================================
@@ -459,7 +464,7 @@ def run_test_suite():
     print("=" * 60)
     print("  UAE HR & NAFIS COPILOT - AUTOMATED TEST SUITE")
     print(f"  Running {len(TEST_CASES)} consolidated test cases")
-    print("  LLM Backend: gpt-4o-mini (OpenAI) via agent.py")
+    print("  LLM Backend: Gemini 3.8 Flash (Google) via agent.py — Phase 2 rebuilt pipeline")
     print("=" * 60)
 
     results = []
@@ -479,7 +484,10 @@ def run_test_suite():
             history = []
             for setup_q in tc["setup_queries"]:
                 print(f"  -> [Setup turn] Running: \"{setup_q}\"")
-                time.sleep(15)  # Rate-limit buffer between setup calls
+                # PHASE 2 — SECTION F: sleep removed. The original 15s buffer was
+                # sized for OpenAI's rate limits; failures here are now just
+                # caught by the try/except around the test call below instead
+                # of pre-emptively guessed against.
                 res = run_agent_turn(setup_q, history)
                 history = res["history"]
             print("  -> Setup complete. Now running the target follow-up query...")
@@ -555,10 +563,10 @@ def run_test_suite():
             print(f"\nResult : CRASHED ({duration:.2f}s)")
             print(err_msg)
 
-        # --- Rate-limit cooldown between tests ---
-        if tc["id"] < len(TEST_CASES):
-            print(f"\n[Cooldown] Waiting 25 seconds before next test (OpenAI TPM rate-limit buffer)...")
-            time.sleep(25)
+        # PHASE 2 — SECTION F: 25s cooldown removed for the same reason as the
+        # setup-turn sleep above — each test call is already wrapped in
+        # try/except, so a real rate-limit error just fails that one test
+        # instead of needing a guessed-at buffer between every call.
 
     # --- Generate final report ---
     generate_report(results)
@@ -591,7 +599,7 @@ def generate_report(results: list):
         # Header
         f.write("# UAE HR & Nafis Copilot - Automated Test Suite Report\n\n")
         f.write(f"**Test Run Date/Time:** {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write("**LLM Backend:** gpt-4o-mini (OpenAI)\n")
+        f.write("**LLM Backend:** Gemini 3.8 Flash (Google) via agent.py — Phase 2 rebuilt pipeline\n")
         f.write(f"**Total Tests:** {len(results)}\n\n")
 
         # Summary

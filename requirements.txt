@@ -1,16 +1,25 @@
 # Minimal, high-performance packages for Cloud-RAG & Agentic workflows
-streamlit>=1.30.0
-google-genai>=0.1.0        # Still required: Gemini Embedding API used in database.py
-qdrant-client>=1.7.0
-python-dotenv>=1.0.0
-pypdf>=4.0.0
-groq>=0.9.0                # NEW: Groq SDK for LLM generation (replaces Gemini in agent.py)
-langchain>=0.1.0
-langchain-groq>=0.1.0
-langchain-core>=0.1.0
-rapidfuzz>=3.0.0
-diskcache>=5.6.0
-# NEW: FastAPI backend bridge for Next.js frontend (src/api.py)
-fastapi>=0.100.0
-uvicorn[standard]>=0.20.0
+google-genai==2.7.0        # Gemini Embedding API used in database.py
+qdrant-client==1.18.0
+python-dotenv==1.2.2
+pydantic-settings==2.15.0  # Central config loader, src/config.py
+pypdf==6.12.2
+langchain==1.3.2
+langchain-core==1.6.1      # bumped from 1.4.7 — required floor for langchain-anthropic>=1.6.0
+langchain-anthropic==1.6.1 # ChatAnthropic, used by agent.py to write answers + rewrite queries (Phase 1 task C)
+rapidfuzz==3.14.5
+diskcache==5.6.3
+# FastAPI backend bridge for Next.js frontend (src/api.py)
+fastapi==0.141.1
+uvicorn[standard]==0.48.0
+python-multipart==0.0.32  # Required by FastAPI for form/file parsing (Phase 3 login form, Phase 4 uploads)
+# Phase 3 — database, auth, audit log (src/db.py, src/auth.py)
+sqlalchemy==2.0.54        # ORM — talks to Postgres instead of hand-written SQL
+asyncpg==0.31.0           # Async Postgres driver used by SQLAlchemy's async engine
+alembic==1.20.0           # Database migrations (versioned schema changes)
+argon2-cffi==25.1.0       # Password hashing (Argon2 — see src/auth.py)
+pyjwt==2.14.0             # Signs/verifies the JWT login tokens
+# Evaluation / baseline testing (tests/evaluations.py, scripts/eval/*, Evaluation/analyze.py)
+langsmith==0.8.8
+pandas==3.0.3
 

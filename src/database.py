@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import uuid
 from dotenv import load_dotenv
 
 # Add the project root directory to Python's path so we can run scripts from anywhere
@@ -9,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from google import genai
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, CreateAlias, CreateAliasOperation, Filter, FieldCondition, MatchValue
+from src.config import settings
 from src.ingestion import extract_text_from_pdf, split_by_articles
 from src.logging_config import get_logger
 from src.caching import get_cached_embedding, set_cached_embedding
@@ -20,23 +22,22 @@ load_dotenv()
 logger = get_logger(__name__)
 
 # 1. Initialize API and DB Clients
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-# We initialize Qdrant in "Local Disk Mode"
-# This stores all database files inside the folder './qdrant_db' in your project.
-qdrant_db_path = "./qdrant_db"
 _qdrant_client_instance = None
 
 # COLLECTION_ALIAS is the stable "nickname" our app uses to query the database.
 # The database will automatically route requests to the active versioned collection (e.g. uae_hr_laws_v1)
-COLLECTION_ALIAS = "uae_hr_laws"
+COLLECTION_ALIAS = settings.COLLECTION_ALIAS
 
 def get_qdrant_client() -> QdrantClient:
     """Returns the active QdrantClient instance (lazy singleton)."""
     global _qdrant_client_instance
     if _qdrant_client_instance is None:
-        _qdrant_client_instance = QdrantClient(path=qdrant_db_path)
+        # Dockerized Qdrant server (Phase 1 task B2) — replaces the old
+        # local-disk mode (QdrantClient(path="./qdrant_db")), which locked
+        # the DB file to a single process at a time.
+        _qdrant_client_instance = QdrantClient(url=settings.QDRANT_URL)
     return _qdrant_client_instance
 
 
@@ -194,26 +195,54 @@ def initialize_database(force_recreate: bool = False) -> str:
     return next_ver
 
 
+# Fixed, arbitrary namespace UUID for this project's deterministic point IDs.
+# (Generated once with uuid.uuid4() and hardcoded — NOT meant to be regenerated;
+# changing this would change every point ID we've ever computed.)
+_POINT_ID_NAMESPACE = uuid.UUID("7f3b1c2a-8e4d-4a5b-9c6f-1d2e3a4b5c6d")
+
+
+def _make_point_id(source: str, article_number: str, sub_chunk_index: int) -> str:
+    """
+    Builds a deterministic Qdrant point ID (Phase 1 task F) from an article's own
+    identity — its source document, article number, and sub-chunk index — instead
+    of a plain sequential counter.
+
+    Same inputs always produce the same UUID (safe to re-ingest: overwrites itself,
+    not someone else's data). Different inputs practically never collide, regardless
+    of what order or batch documents are ingested in — this is what makes incremental,
+    per-document uploads (Phase 4) safe.
+    """
+    fingerprint = f"{source}|{article_number}|{sub_chunk_index}"
+    return str(uuid.uuid5(_POINT_ID_NAMESPACE, fingerprint))
+
+
 def index_articles(articles: list, target_collection: str, batch_size: int = 10):
     """
     Ingests extracted articles into a specific Qdrant collection.
     """
     logger.info(f"Starting ingestion of {len(articles)} articles into collection '{target_collection}'...")
-    
+
     for i in range(0, len(articles), batch_size):
         batch = articles[i : i + batch_size]
         batch_texts = [item["text"] for item in batch]
-        
+
         logger.info(f"Processing batch {i//batch_size + 1}: Chunks {i} to {min(i + batch_size, len(articles))}...")
-        
+
         # 1. Get embedding vectors (with caching support)
         vectors = get_embeddings_with_retry(batch_texts)
-        
+
         # 2. Build Qdrant points
         points = []
         for idx, item in enumerate(batch):
-            point_id = i + idx
-            
+            # Deterministic ID (Phase 1 task F) — replaces the old sequential
+            # `point_id = i + idx`, which collided across separate ingestion calls
+            # once documents get added incrementally (Phase 4).
+            point_id = _make_point_id(
+                source=item["metadata"]["source"],
+                article_number=item["metadata"]["article_number"],
+                sub_chunk_index=item["metadata"].get("sub_chunk_index", 0),
+            )
+
             point = PointStruct(
                 id=point_id,
                 vector=vectors[idx],
